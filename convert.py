@@ -98,10 +98,10 @@ grid = RegularGrid(crd_sys=crd_sys,
 
 scalarFloor = np.zeros(1, dtype=float)+1e-30
 
-tool.regridToRegularGrid(rgrid=grid, scalarFloor=scalarFloor)
-tool.writeGrid()
-tool.writeScalar(fname=fname + ".inp", ivar=0, nscal=1, binary=False)
-
-# tool.regridToAMRGrid(maxAMRParticlesPerCell=10, maxAMRTreeDepth=12, scalarFloor=scalarFloor)
+# tool.regridToRegularGrid(rgrid=grid, scalarFloor=scalarFloor)
 # tool.writeGrid()
 # tool.writeScalar(fname=fname + ".inp", ivar=0, nscal=1, binary=False)
+
+tool.regridToAMRGrid(maxAMRParticlesPerCell=10, maxAMRTreeDepth=12, scalarFloor=scalarFloor)
+tool.writeGrid()
+tool.writeScalar(fname=fname + ".inp", ivar=0, nscal=1, binary=False)
