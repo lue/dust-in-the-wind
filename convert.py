@@ -1,3 +1,17 @@
+import sys
+
+sys.path.append('/home/kaurov/bin/python/')
+
+
+
+au  = 1.49598e13     # Astronomical Unit       [cm]
+pc  = 3.08572e18     # Parsec                  [cm]
+ms  = 1.98892e33     # Solar mass              [g]
+ts  = 5.78e3         # Solar temperature       [K]
+ls  = 3.8525e33      # Solar luminosity        [erg/s]
+rs  = 6.96e10        # Solar radius            [cm]
+
+
 import h5py
 import numpy as np
 import radmc3dPy.natconst as nc
@@ -49,6 +63,13 @@ def read_gizmo_dust_sph(fname=None):
 fname = 'snapshot_100.hdf5'
 sph = read_gizmo_dust_sph(fname=fname)
 
+# Setting the largest size to be 1 micron
+sph['grainsize'] /= (sph['grainsize']/2.).max()
+sph['grainsize'] *= 1e-4 * 1e10
+
+sph['rho'] = sph['rho']*0.0 + 2.0
+sph['pmass'] = 4./3.*np.pi*sph['rho']*sph['grainsize']**3
+
 # We need to add vector quantities as a three
 # dimensional numpy.ndarray objects with the
 # first index is the particle indes, second is
@@ -59,11 +80,13 @@ vel[:, 0, 0] = sph['vx']
 vel[:, 0, 1] = sph['vy']
 vel[:, 0, 2] = sph['vz']
 
-tool = SPHTool(maxSPHParticlesPerCell=10, maxSPHTreeDepth=12, nThreads=4)
-tool.setSPHData(x=(sph['z']).astype(np.float64)-0.5,
-                y=(sph['x']).astype(np.float64)-0.5,
-                z=(sph['y']).astype(np.float64)-0.5,
-                h=sph['h'].astype(np.float64),
+bsize = rs*100.
+
+tool = SPHTool(maxSPHParticlesPerCell=1000, maxSPHTreeDepth=10, nThreads=4)
+tool.setSPHData(x=((sph['z'] - 0.5)*bsize).astype(np.float64),
+                y=((sph['x'] - 0.5)*bsize).astype(np.float64),
+                z=((sph['y'] - 0.5)*bsize).astype(np.float64),
+                h=(sph['h']*bsize).astype(np.float64),
                 rho=sph['rho'].astype(np.float64),
                 pmass=sph['pmass'].astype(np.float64),
                 vectors=vel)
@@ -72,21 +95,30 @@ tool.init()
 
 ### Examine data
 fig = plt.figure()
-tool.plotScalarSlice2D(incl=90., phi=0.,
+tool.plotScalarSlice2D(incl=0., phi=0.,
                        iscalar=0, npix=400,
-                       imsize=2.0, scale='log',
-                       vmin=1e-7, cblabel=r'g/cm$^3$')
+                       imsize=bsize, scale='log',
+                    cblabel=r'g/cm$^3$')
+plt.show()
+
+
+fig = plt.figure()
+tool.plotScalarSlice2D(incl=0., phi=0.,
+                       iscalar=0, npix=400,
+                       imsize=1*bsize, cblabel=r'g/cm$^3$')
 plt.show()
 
 ### Project on a regular grid:
+
+
 
 crd_sys = 'car'
 nx = 100
 ny = 100
 nz = 100
-xbound = [0, 1.]
-ybound = [0., 1.]
-zbound = [0., 1.]
+xbound = [-bsize/2., bsize/2.]
+ybound = [-bsize/2., bsize/2.]
+zbound = [-bsize/2., bsize/2.]
 
 grid = RegularGrid(crd_sys=crd_sys,
                    nx=nx,
@@ -98,10 +130,10 @@ grid = RegularGrid(crd_sys=crd_sys,
 
 scalarFloor = np.zeros(1, dtype=float)+1e-30
 
-# tool.regridToRegularGrid(rgrid=grid, scalarFloor=scalarFloor)
-# tool.writeGrid()
-# tool.writeScalar(fname=fname + ".inp", ivar=0, nscal=1, binary=False)
-
-tool.regridToAMRGrid(maxAMRParticlesPerCell=10, maxAMRTreeDepth=12, scalarFloor=scalarFloor)
+tool.regridToRegularGrid(rgrid=grid, scalarFloor=scalarFloor)
 tool.writeGrid()
-tool.writeScalar(fname=fname + ".inp", ivar=0, nscal=1, binary=False)
+tool.writeScalar(fname="dust_density.inp", ivar=0, nscal=1, binary=False)
+
+# tool.regridToAMRGrid(maxAMRParticlesPerCell=10, maxAMRTreeDepth=12, scalarFloor=scalarFloor)
+# tool.writeGrid()
+# tool.writeScalar(fname="dust_density.inp", ivar=0, nscal=1, binary=False)
