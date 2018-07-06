@@ -44,7 +44,7 @@ rho0     = 1e-13
 # Star parameters
 #
 mstar    = ms
-rstar    = rs*.01
+rstar    = rs*10.
 tstar    = ts
 pstar    = np.array([0.,0.,100.*rs])
 #
@@ -63,6 +63,7 @@ lam23    = np.logspace(np.log10(lam2),np.log10(lam3),n23,endpoint=False)
 lam34    = np.logspace(np.log10(lam3),np.log10(lam4),n34,endpoint=True)
 lam      = np.concatenate([lam12,lam23,lam34])
 nlam     = lam.size
+
 #
 # Write the wavelength file
 #
@@ -75,6 +76,12 @@ with open('wavelength_micron.inp','w+') as f:
 #
 # Write the stars.inp file
 #
+
+
+mstar    = ms
+rstar    = rs*10.
+tstar    = ts
+pstar    = np.array([0.,0.,100.*rs])
 
 with open('stars.inp','w+') as f:
     f.write('2\n')

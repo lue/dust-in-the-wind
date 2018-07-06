@@ -52,7 +52,7 @@ def read_gizmo_dust_sph(fname=None):
         'y': f['PartType3']['Coordinates'][:, 1],
         'z': f['PartType3']['Coordinates'][:, 2],
         'pmass': f['PartType3']['Masses'][:],
-        'h': f['PartType3']['Coordinates'][:, 0] * 00 + 0.01,
+        'h': f['PartType3']['Coordinates'][:, 0] * 00 + 0.005,
         'rho': f['PartType3']['Masses'][:] / (4. / 3. * np.pi * f['PartType3']['GrainSize'][:] ** 3),
         'vx': f['PartType3']['Velocities'][:, 0],
         'vy': f['PartType3']['Velocities'][:, 1],
@@ -63,9 +63,14 @@ def read_gizmo_dust_sph(fname=None):
 fname = 'snapshot_100.hdf5'
 sph = read_gizmo_dust_sph(fname=fname)
 
+temp = sph['z'].copy()
+temp[np.where((temp>0.25) & (temp<0.5))[0][::2]] -= 0.25
+temp[np.where((temp<0.75) & (temp>0.5))[0][::2]] += 0.25
+sph['z'] = temp
+
 # Setting the largest size to be 1 micron
 sph['grainsize'] /= (sph['grainsize']/2.).max()
-sph['grainsize'] *= 1e-4 * 1e10
+sph['grainsize'] *= 1e-4 * 3e8
 
 sph['rho'] = sph['rho']*0.0 + 2.0
 sph['pmass'] = 4./3.*np.pi*sph['rho']*sph['grainsize']**3
@@ -82,7 +87,7 @@ vel[:, 0, 2] = sph['vz']
 
 bsize = rs*100.
 
-tool = SPHTool(maxSPHParticlesPerCell=1000, maxSPHTreeDepth=10, nThreads=4)
+tool = SPHTool(maxSPHParticlesPerCell=10000, maxSPHTreeDepth=10, nThreads=16)
 tool.setSPHData(x=((sph['z'] - 0.5)*bsize).astype(np.float64),
                 y=((sph['x'] - 0.5)*bsize).astype(np.float64),
                 z=((sph['y'] - 0.5)*bsize).astype(np.float64),
@@ -91,25 +96,6 @@ tool.setSPHData(x=((sph['z'] - 0.5)*bsize).astype(np.float64),
                 pmass=sph['pmass'].astype(np.float64),
                 vectors=vel)
 tool.init()
-
-
-### Examine data
-fig = plt.figure()
-tool.plotScalarSlice2D(incl=0., phi=0.,
-                       iscalar=0, npix=400,
-                       imsize=bsize, scale='log',
-                    cblabel=r'g/cm$^3$')
-plt.show()
-
-
-fig = plt.figure()
-tool.plotScalarSlice2D(incl=0., phi=0.,
-                       iscalar=0, npix=400,
-                       imsize=1*bsize, cblabel=r'g/cm$^3$')
-plt.show()
-
-### Project on a regular grid:
-
 
 
 crd_sys = 'car'
@@ -132,8 +118,75 @@ scalarFloor = np.zeros(1, dtype=float)+1e-30
 
 tool.regridToRegularGrid(rgrid=grid, scalarFloor=scalarFloor)
 tool.writeGrid()
-tool.writeScalar(fname="dust_density.inp", ivar=0, nscal=1, binary=False)
+tool.writeScalar(fname="dust_density.binp", ivar=0, nscal=1, binary=True)
 
-# tool.regridToAMRGrid(maxAMRParticlesPerCell=10, maxAMRTreeDepth=12, scalarFloor=scalarFloor)
-# tool.writeGrid()
-# tool.writeScalar(fname="dust_density.inp", ivar=0, nscal=1, binary=False)
+
+### Examine data
+fig = plt.figure()
+tool.plotScalarSlice2D(incl=0., phi=0.,
+                       iscalar=0, npix=400,
+                       imsize=bsize, scale='log',
+                    cblabel=r'g/cm$^3$')
+plt.show()
+
+
+# fig = plt.figure()
+# tool.plotScalarSlice2D(incl=0., phi=0.,
+#                        iscalar=0, npix=400,
+#                        imsize=1*bsize, cblabel=r'g/cm$^3$')
+# plt.show()
+
+### Project on a regular grid:
+
+tool.regridToAMRGrid(maxAMRParticlesPerCell=10000, maxAMRTreeDepth=10, scalarFloor=scalarFloor)
+tool.writeGrid()
+tool.writeScalar(fname="dust_density.binp", ivar=0, nscal=1, binary=True)
+
+
+
+
+
+
+
+
+
+
+xi       = np.linspace(xbound[0],xbound[1],nx+1)
+yi       = np.linspace(ybound[0],ybound[1],ny+1)
+zi       = np.linspace(zbound[0],zbound[1],nz+1)
+xc       = 0.5 * ( xi[0:nx] + xi[1:nx+1] )
+yc       = 0.5 * ( yi[0:ny] + yi[1:ny+1] )
+zc       = 0.5 * ( zi[0:nz] + zi[1:nz+1] )
+#
+# Make the grid
+#
+qq       = np.meshgrid(xc,yc,zc,indexing='ij')
+xx       = qq[0]
+yy       = qq[1]
+zz       = qq[2]
+#
+
+H, edges = np.histogramdd([(sph['z'] - 0.5)*bsize, (sph['x'] - 0.5)*bsize, (sph['y'] - 0.5)*bsize], bins = [xi, yi, zi])
+rhod = H*1e-17
+
+with open('amr_grid.inp','w+') as f:
+    f.write('1\n')                       # iformat
+    f.write('0\n')                       # AMR grid style  (0=regular grid, no AMR)
+    f.write('0\n')                       # Coordinate system
+    f.write('0\n')                       # gridinfo
+    f.write('1 1 1\n')                   # Include x,y,z coordinate
+    f.write('%d %d %d\n'%(nx,ny,nz))     # Size of grid
+    np.savetxt(f,xi.T,fmt=['%13.6e'])    # X coordinates (cell walls)
+    np.savetxt(f,yi.T,fmt=['%13.6e'])    # Y coordinates (cell walls)
+    np.savetxt(f,zi.T,fmt=['%13.6e'])    # Z coordinates (cell walls)
+
+#
+# Write the density file
+#
+
+with open('dust_density.inp','w+') as f:
+    f.write('1\n')                       # Format number
+    f.write('%d\n'%(nx*ny*nz))           # Nr of cells
+    f.write('1\n')                       # Nr of dust species
+    data = rhod.ravel(order='F')         # Create a 1-D view, fortran-style indexing
+    np.savetxt(f,data.T,fmt=['%13.6e'])  # The data
