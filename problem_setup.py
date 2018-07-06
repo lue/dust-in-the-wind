@@ -133,18 +133,9 @@ with open('radmc3d.inp','w') as f:
     f.write('nphot = %d\n'%(nphot))
     f.write('scattering_mode_max = 1000\n')
     f.write('iranfreqmode = 1\n')
+    f.write('istar_sphere = 1')
 
 
-
-    f.write('''incl_cont_stellarsrc      = False  # # Switches on (True) or off (False) continuous stellar sources )
-incl_disc_stellarsrc      = True  # # Switches on (True) or off (False) discrete stellar sources)
-mstar                     = [1.0*ms]  # # Mass of the star(s)
-pstar                     = [0.0, 0.0, 1000.0*rs]  # # Position of the star(s) (cartesian coordinates)
-rstar                     = [10.0*rs]  # # Radius of the star(s)
-staremis_type             = ["blackbody"]  # # Stellar emission type ("blackbody", "kurucz", "nextgen")
-tstar                     = [4000.0]  # # Effective temperature of the star(s) [K]
-''')
-    f.close()
 
 
 

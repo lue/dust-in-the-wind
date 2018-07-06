@@ -45,7 +45,7 @@ plt.show()
 
 
 
-im = image.readImage(); image.plotImage(im, au=True, log=True, cmap=plt.cm.gist_heat)
+im = image.readImage(); image.plotImage(im, au=True, log=True, cmap=plt.cm.gist_heat, vmin=1e-5)
 
 
 

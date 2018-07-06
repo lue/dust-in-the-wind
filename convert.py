@@ -78,16 +78,16 @@ sph['pmass'] = 4./3.*np.pi*sph['rho']*sph['grainsize']**3
 bsize = rs*100.
 
 crd_sys = 'car'
-nx = 100
-ny = 100
-nz = 100
+nx = 256
+ny = 256
+nz = 256
 xbound = [-bsize/2., bsize/2.]
 ybound = [-bsize/2., bsize/2.]
 zbound = [-bsize/2., bsize/2.]
 
-xi       = np.linspace(xbound[0],xbound[1],nx+1)
-yi       = np.linspace(ybound[0],ybound[1],ny+1)
-zi       = np.linspace(zbound[0],zbound[1],nz+1)
+xi       = np.linspace(xbound[0]*2,xbound[1]*2,nx+1)
+yi       = np.linspace(ybound[0]*2,ybound[1]*2,ny+1)
+zi       = np.linspace(zbound[0]*2,zbound[1]*2,nz+1)
 xc       = 0.5 * ( xi[0:nx] + xi[1:nx+1] )
 yc       = 0.5 * ( yi[0:ny] + yi[1:ny+1] )
 zc       = 0.5 * ( zi[0:nz] + zi[1:nz+1] )
@@ -100,9 +100,14 @@ yy       = qq[1]
 zz       = qq[2]
 #
 
-H, edges = np.histogramdd([(sph['z'] - 0.5)*bsize, (sph['x'] - 0.5)*bsize, (sph['y'] - 0.5)*bsize], bins = [xi, yi, zi])
+r = np.random.random(size=[len(sph['x']), 3])
 
-rhod = H.T*1e-17
+H1, edges = np.histogramdd([(sph['z'])*bsize, (sph['x'])*bsize, (sph['y'])*bsize], bins = [xi, yi, zi])
+H2, edges = np.histogramdd([(sph['x'])*bsize, (-sph['y'])*bsize, (sph['z'])*bsize], bins = [xi, yi, zi])
+H3, edges = np.histogramdd([(sph['z']-1.)*bsize, (sph['x']-1.)*bsize, (sph['y'])*bsize], bins = [xi, yi, zi])
+H4, edges = np.histogramdd([(-r[:,0])*bsize, (r[:,1])*bsize, (sph['z'])*bsize], bins = [xi, yi, zi])
+
+rhod = (H1+H2+H3+H4)*1e-19
 
 with open('amr_grid.inp','w+') as f:
     f.write('1\n')                       # iformat
