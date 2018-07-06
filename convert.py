@@ -63,10 +63,10 @@ def read_gizmo_dust_sph(fname=None):
 fname = 'snapshot_100.hdf5'
 sph = read_gizmo_dust_sph(fname=fname)
 
-temp = sph['z'].copy()
-temp[np.where((temp>0.25) & (temp<0.5))[0][::2]] -= 0.25
-temp[np.where((temp<0.75) & (temp>0.5))[0][::2]] += 0.25
-sph['z'] = temp
+# temp = sph['z'].copy()
+# temp[np.where((temp>0.25) & (temp<0.5))[0][::2]] -= 0.25
+# temp[np.where((temp<0.75) & (temp>0.5))[0][::2]] += 0.25
+# sph['z'] = temp
 
 # Setting the largest size to be 1 micron
 sph['grainsize'] /= (sph['grainsize']/2.).max()
@@ -75,28 +75,7 @@ sph['grainsize'] *= 1e-4 * 3e8
 sph['rho'] = sph['rho']*0.0 + 2.0
 sph['pmass'] = 4./3.*np.pi*sph['rho']*sph['grainsize']**3
 
-# We need to add vector quantities as a three
-# dimensional numpy.ndarray objects with the
-# first index is the particle indes, second is
-# the variable index (here we have only one variable, the velocity),
-# and the third is the spatial coordinate index:
-vel = np.zeros([sph['x'].shape[0], 1, 3], dtype=np.float64)
-vel[:, 0, 0] = sph['vx']
-vel[:, 0, 1] = sph['vy']
-vel[:, 0, 2] = sph['vz']
-
 bsize = rs*100.
-
-tool = SPHTool(maxSPHParticlesPerCell=10000, maxSPHTreeDepth=10, nThreads=16)
-tool.setSPHData(x=((sph['z'] - 0.5)*bsize).astype(np.float64),
-                y=((sph['x'] - 0.5)*bsize).astype(np.float64),
-                z=((sph['y'] - 0.5)*bsize).astype(np.float64),
-                h=(sph['h']*bsize).astype(np.float64),
-                rho=sph['rho'].astype(np.float64),
-                pmass=sph['pmass'].astype(np.float64),
-                vectors=vel)
-tool.init()
-
 
 crd_sys = 'car'
 nx = 100
@@ -105,51 +84,6 @@ nz = 100
 xbound = [-bsize/2., bsize/2.]
 ybound = [-bsize/2., bsize/2.]
 zbound = [-bsize/2., bsize/2.]
-
-grid = RegularGrid(crd_sys=crd_sys,
-                   nx=nx,
-                   ny=ny,
-                   nz=nz,
-                   xbound=xbound,
-                   ybound=ybound,
-                   zbound=zbound)
-
-scalarFloor = np.zeros(1, dtype=float)+1e-30
-
-tool.regridToRegularGrid(rgrid=grid, scalarFloor=scalarFloor)
-tool.writeGrid()
-tool.writeScalar(fname="dust_density.binp", ivar=0, nscal=1, binary=True)
-
-
-### Examine data
-fig = plt.figure()
-tool.plotScalarSlice2D(incl=0., phi=0.,
-                       iscalar=0, npix=400,
-                       imsize=bsize, scale='log',
-                    cblabel=r'g/cm$^3$')
-plt.show()
-
-
-# fig = plt.figure()
-# tool.plotScalarSlice2D(incl=0., phi=0.,
-#                        iscalar=0, npix=400,
-#                        imsize=1*bsize, cblabel=r'g/cm$^3$')
-# plt.show()
-
-### Project on a regular grid:
-
-tool.regridToAMRGrid(maxAMRParticlesPerCell=10000, maxAMRTreeDepth=10, scalarFloor=scalarFloor)
-tool.writeGrid()
-tool.writeScalar(fname="dust_density.binp", ivar=0, nscal=1, binary=True)
-
-
-
-
-
-
-
-
-
 
 xi       = np.linspace(xbound[0],xbound[1],nx+1)
 yi       = np.linspace(ybound[0],ybound[1],ny+1)
@@ -167,7 +101,8 @@ zz       = qq[2]
 #
 
 H, edges = np.histogramdd([(sph['z'] - 0.5)*bsize, (sph['x'] - 0.5)*bsize, (sph['y'] - 0.5)*bsize], bins = [xi, yi, zi])
-rhod = H*1e-17
+
+rhod = H.T*1e-17
 
 with open('amr_grid.inp','w+') as f:
     f.write('1\n')                       # iformat
@@ -190,3 +125,85 @@ with open('dust_density.inp','w+') as f:
     f.write('1\n')                       # Nr of dust species
     data = rhod.ravel(order='F')         # Create a 1-D view, fortran-style indexing
     np.savetxt(f,data.T,fmt=['%13.6e'])  # The data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# We need to add vector quantities as a three
+# dimensional numpy.ndarray objects with the
+# first index is the particle indes, second is
+# the variable index (here we have only one variable, the velocity),
+# and the third is the spatial coordinate index:
+# vel = np.zeros([sph['x'].shape[0], 1, 3], dtype=np.float64)
+# vel[:, 0, 0] = sph['vx']
+# vel[:, 0, 1] = sph['vy']
+# vel[:, 0, 2] = sph['vz']
+#
+# bsize = rs*100.
+#
+# tool = SPHTool(maxSPHParticlesPerCell=10000, maxSPHTreeDepth=10, nThreads=16)
+# tool.setSPHData(x=((sph['z'] - 0.5)*bsize).astype(np.float64),
+#                 y=((sph['x'] - 0.5)*bsize).astype(np.float64),
+#                 z=((sph['y'] - 0.5)*bsize).astype(np.float64),
+#                 h=(sph['h']*bsize).astype(np.float64),
+#                 rho=sph['rho'].astype(np.float64),
+#                 pmass=sph['pmass'].astype(np.float64),
+#                 vectors=vel)
+# tool.init()
+
+
+# grid = RegularGrid(crd_sys=crd_sys,
+#                    nx=nx,
+#                    ny=ny,
+#                    nz=nz,
+#                    xbound=xbound,
+#                    ybound=ybound,
+#                    zbound=zbound)
+#
+# scalarFloor = np.zeros(1, dtype=float)+1e-30
+#
+# tool.regridToRegularGrid(rgrid=grid, scalarFloor=scalarFloor)
+# tool.writeGrid()
+# tool.writeScalar(fname="dust_density.binp", ivar=0, nscal=1, binary=True)
+#
+#
+# ### Examine data
+# fig = plt.figure()
+# tool.plotScalarSlice2D(incl=0., phi=0.,
+#                        iscalar=0, npix=400,
+#                        imsize=bsize, scale='log',
+#                     cblabel=r'g/cm$^3$')
+# plt.show()
+#
+#
+# # fig = plt.figure()
+# # tool.plotScalarSlice2D(incl=0., phi=0.,
+# #                        iscalar=0, npix=400,
+# #                        imsize=1*bsize, cblabel=r'g/cm$^3$')
+# # plt.show()
+#
+# ### Project on a regular grid:
+#
+# tool.regridToAMRGrid(maxAMRParticlesPerCell=10000, maxAMRTreeDepth=10, scalarFloor=scalarFloor)
+# tool.writeGrid()
+# tool.writeScalar(fname="dust_density.binp", ivar=0, nscal=1, binary=True)
+
+
+
+
+
+
+
+
+

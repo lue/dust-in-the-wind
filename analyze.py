@@ -11,7 +11,7 @@ import matplotlib.pylab as plb
 
 
 
-data = analyze.readData(ddens=True)
+data = analyze.readData(ddens=False)
 
 
 c = plb.contourf(data.grid.x, data.grid.y, np.log10(data.rhodust[:,:,0,0].T), 30)
@@ -25,7 +25,7 @@ plt.show()
 data = analyze.readData(dtemp=True)
 data.readDustTemp()
 
-c = plb.contourf(data.grid.x/natconst.au, data.grid.y/natconst.au, data.dusttemp[:,:,50,0].T, 30)
+c = plb.contourf(data.grid.x/natconst.au, data.grid.y/natconst.au, data.dusttemp[:,:,16,0].T, 30)
 plb.xlabel('r [AU]')
 plb.ylabel(r'$\pi/2-\theta$')
 # plb.xscale('log')
