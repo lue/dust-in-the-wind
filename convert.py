@@ -70,7 +70,7 @@ sph = read_gizmo_dust_sph(fname=fname)
 
 # Setting the largest size to be 1 micron
 sph['grainsize'] /= (sph['grainsize']/2.).max()
-sph['grainsize'] *= 1e-4 * 3e8
+sph['grainsize'] *= 1e-4 * 10e8
 
 sph['rho'] = sph['rho']*0.0 + 2.0
 sph['pmass'] = 4./3.*np.pi*sph['rho']*sph['grainsize']**3
@@ -107,7 +107,7 @@ H2, edges = np.histogramdd([(sph['x'])*bsize, (-sph['y'])*bsize, (sph['z'])*bsiz
 H3, edges = np.histogramdd([(sph['z']-1.)*bsize, (sph['x']-1.)*bsize, (sph['y'])*bsize], bins = [xi, yi, zi])
 H4, edges = np.histogramdd([(-r[:,0])*bsize, (r[:,1])*bsize, (sph['z'])*bsize], bins = [xi, yi, zi])
 
-rhod = (H1+H2+H3+H4)*1e-19
+rhod = (H1+H2+H3+H4)*1e-17
 
 with open('amr_grid.inp','w+') as f:
     f.write('1\n')                       # iformat

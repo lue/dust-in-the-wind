@@ -133,7 +133,7 @@ with open('radmc3d.inp','w') as f:
     f.write('nphot = %d\n'%(nphot))
     f.write('scattering_mode_max = 1000\n')
     f.write('iranfreqmode = 1\n')
-    f.write('istar_sphere = 1')
+    f.write('istar_sphere = 0')
 
 
 
