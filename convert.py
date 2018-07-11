@@ -107,29 +107,29 @@ H2, edges = np.histogramdd([(sph['x'])*bsize, (-sph['y'])*bsize, (sph['z'])*bsiz
 H3, edges = np.histogramdd([(sph['z']-1.)*bsize, (sph['x']-1.)*bsize, (sph['y'])*bsize], bins = [xi, yi, zi])
 H4, edges = np.histogramdd([(-r[:,0])*bsize, (r[:,1])*bsize, (sph['z'])*bsize], bins = [xi, yi, zi])
 
-rhod = (H1+H2+H3+H4)*1e-17
+rhod = (H1+H2+H3+H4)*3e-17
 
-with open('amr_grid.inp','w+') as f:
+with open('amr_grid.inp', 'w+') as f:
     f.write('1\n')                       # iformat
     f.write('0\n')                       # AMR grid style  (0=regular grid, no AMR)
     f.write('0\n')                       # Coordinate system
     f.write('0\n')                       # gridinfo
     f.write('1 1 1\n')                   # Include x,y,z coordinate
     f.write('%d %d %d\n'%(nx,ny,nz))     # Size of grid
-    np.savetxt(f,xi.T,fmt=['%13.6e'])    # X coordinates (cell walls)
-    np.savetxt(f,yi.T,fmt=['%13.6e'])    # Y coordinates (cell walls)
-    np.savetxt(f,zi.T,fmt=['%13.6e'])    # Z coordinates (cell walls)
+    np.savetxt(f, xi.T, fmt=['%13.6e'])    # X coordinates (cell walls)
+    np.savetxt(f, yi.T, fmt=['%13.6e'])    # Y coordinates (cell walls)
+    np.savetxt(f, zi.T, fmt=['%13.6e'])    # Z coordinates (cell walls)
 
 #
 # Write the density file
 #
 
-with open('dust_density.inp','w+') as f:
+with open('dust_density.inp', 'w+') as f:
     f.write('1\n')                       # Format number
     f.write('%d\n'%(nx*ny*nz))           # Nr of cells
     f.write('1\n')                       # Nr of dust species
     data = rhod.ravel(order='F')         # Create a 1-D view, fortran-style indexing
-    np.savetxt(f,data.T,fmt=['%13.6e'])  # The data
+    np.savetxt(f, data.T, fmt=['%13.6e'])  # The data
 
 
 

@@ -48,7 +48,9 @@ plt.show()
 
 
 im = image.readImage('image10.out'); image.plotImage(im, au=True, log=True, cmap=plt.cm.jet, maxlog=10)
-im = image.readImage('image.out'); image.plotImage(im, au=True, log=True, cmap=plt.cm.jet, maxlog=10)
+
+
+im = image.readImage('image1.0_nostar.out'); image.plotImage(im, au=True, log=True, cmap=plt.cm.jet, maxlog=10)
 
 
 
